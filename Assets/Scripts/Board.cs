@@ -17,7 +17,6 @@ public class Board : MonoBehaviour
     public void Awake()
     {
         grid = GetComponentsInChildren<Cell>().ToList();
-        
     }
 
     

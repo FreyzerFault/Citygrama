@@ -2,6 +2,9 @@ using System;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
+using static UnityEngine.ParticleSystem;
+using Image = UnityEngine.UI.Image;
 
 public class Cell : MonoBehaviour
 {
@@ -34,10 +37,10 @@ public class Cell : MonoBehaviour
 
     private void Awake()
     {
-        GetComponent<Image>().sprite = defaultSprite;
+        GetComponent<UnityEngine.UI.Image>().sprite = defaultSprite;
     }
 
-    public void OnMouseDown()
+	public void OnMouseDown()
     {
         if (Input.GetMouseButton(0))
             MouseDownEvent.Invoke();

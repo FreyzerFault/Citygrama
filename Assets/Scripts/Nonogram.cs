@@ -1,6 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = System.Random;
@@ -20,6 +23,9 @@ public class Nonogram : MonoBehaviour
 
     public GameObject BuildingTilePrefab;
     public GameObject RoadTilePrefab;
+
+    // Board Generation
+    public int cellBuildingProbability = 50;
     
     // FAIL Score
     public int fails;
@@ -80,15 +86,17 @@ public class Nonogram : MonoBehaviour
     {
         fails = 0;
         failsText.text = "0";
-        
-        board.Reset();
+
+		tileMap.Clear();
+
+		InitializeRandomBoard();
+		SetHints();
+
+		board.Reset();
         tileMap.Reset();
         city.Reset();
         
         selectedCells.Clear();
-        
-        InitializeRandomBoard();
-        SetHints();
     }
 
     public void RevealBoard()
@@ -101,21 +109,48 @@ public class Nonogram : MonoBehaviour
 
     public void InitializeRandomBoard()
     {
-        for (int i = 0; i < Width * Height; i++)
+        // Probabilidad acumulada, va aumentando o disminuyendo conforme salen casillas llenas
+        int accumulativeProbability = 0;
+
+        // Reduce la probabilidad cuando pasa de 4
+		Boolean reduceProb = false;
+        int reduceProbThreshold = 5;
+
+        // Casillas llenas acumuladas
+        int prevBuildingAccumulative = 0;
+
+		Cell.CellValue prevValue = Cell.CellValue.Road;
+
+		for (int i = 0; i < Width * Height; i++)
         {
             Cell cell = board.grid[i];
-            
-            // Valor Random (40% empty)
-            cell.value = new Random().Next(0, 100) < 40 ? Cell.CellValue.Road : Cell.CellValue.Building;
-            
+
+			// Valor Random (X% empty)
+
+			cell.value = new Random().Next(0, 100) < (cellBuildingProbability + accumulativeProbability) ? Cell.CellValue.Building : Cell.CellValue.Road;
+            prevValue = cell.value;
+
+            if (cell.value == Cell.CellValue.Building) // Casilla llena
+			{
+				prevBuildingAccumulative++;
+				if (prevBuildingAccumulative < reduceProbThreshold) accumulativeProbability += 10;
+				else accumulativeProbability -= 10;
+            }
+            else // Casilla vacia
+			{
+                accumulativeProbability = 0;
+				prevBuildingAccumulative = 0;
+				reduceProb = false;
+			}
+
             // Estado oculto al empezar
             cell.state = Cell.CellState.Hidden; 
             
             // Posicion en el tablero
             cell.index = i;
             cell.coords = new Vector2Int(i % Width, i / Width);
-            
-            // Tile
+
+            // Create Tiles
             GameObject tileObj = Instantiate(cell.value == Cell.CellValue.Building ? BuildingTilePrefab : RoadTilePrefab, tileMap.transform);
             Tile tile = tileObj.GetComponent<Tile>();
             tileMap.tiles.Add(tile);
@@ -362,7 +397,7 @@ public class Nonogram : MonoBehaviour
         city.rotation = true;
         city.rotSpeed = 50;
         
-        yield return new WaitForSeconds(3);
+        yield return new WaitForSeconds(6);
         
         Reset();
         yield return null;

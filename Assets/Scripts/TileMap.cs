@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class TileMap : MonoBehaviour
 {
@@ -12,28 +14,41 @@ public class TileMap : MonoBehaviour
 
     private void Awake()
     {
-        tiles = GetComponentsInChildren<Tile>().ToList();
-        
+        Reset();
     }
 
     private void Start()
     {
-        // Clear ALL Tiles
         Reset();
-        
-        // Set road neighbours
-        foreach (Tile tile in tiles)
-        {
-            if (tile is RoadTile road)
-            {
-                road.neighbours = GetNeighbours(tile.Index);
-            }
-        }
     }
 
+    public void Clear()
+	{
+		if (GetComponentsInChildren<Tile>() != null)
+		{
+			foreach (Transform tileChild in transform)
+			{
+				if (tileChild.gameObject != null)
+				{
+
+					Destroy(tileChild.gameObject);
+				}
+			}
+		}
+        tiles.Clear();
+	}
+
     public void Reset()
-    {
-        tiles.ForEach((tile) => tile.ClearTile());
+	{        
+		tiles.ForEach(
+            (tile) => {
+				// Clear Tile Children
+				tile.ClearTile();
+				// Set road neighbours
+				if (tile is RoadTile road)
+					road.neighbours = GetNeighbours(tile.Index);
+			}
+            );
     }
     
     public void RevealTile(int index)
